@@ -1,0 +1,19 @@
+[Unit]
+Description=Astronaut push-to-talk Mission Control
+After=network-online.target sound.target
+Wants=network-online.target
+# Never give up restarting (default limit would stop after 5 quick failures)
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=landers2
+SupplementaryGroups=audio gpio
+WorkingDirectory=/home/landers2/astronaut-speaker
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/home/landers2/astronaut-speaker/.venv/bin/python main.py
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
