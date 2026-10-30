@@ -20,6 +20,8 @@ CLIPS = {
     "comms_online": "Houston here. Comms online, we read you loud and clear.",
     "say_again": "Say again, over.",
     "losing_signal": "Losing signal, Houston. Stand by.",
+    "no_signal": "Warning. No signal. Check the hotspot.",
+    "shutting_down": "Houston signing off. Shutting down.",
 }
 BEEP_RATE = 48000
 

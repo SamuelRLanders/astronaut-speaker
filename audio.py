@@ -172,6 +172,14 @@ class Player:
             self._pos = 0
             self._done.clear()
 
+    def enqueue(self, samples, rate):
+        """Append to whatever is playing (or start playing if idle)."""
+        x = np.clip(resample(samples, rate, self.rate), -1.0, 1.0)
+        with self._lock:
+            self._buf = np.concatenate([self._buf[self._pos:], x])
+            self._pos = 0
+            self._done.clear()
+
     def stop(self):
         with self._lock:
             self._buf = np.zeros(0, np.float32)

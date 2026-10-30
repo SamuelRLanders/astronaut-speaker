@@ -20,16 +20,27 @@ def _voice():
 
 
 def load():
-    """Load the voice up front (takes several seconds on a Pi 4)."""
-    _voice()
+    """Load the voice up front (takes several seconds on a Pi 4) and run one
+    throwaway synthesis, so the first real reply isn't slowed by a cold start."""
+    list(_voice().synthesize("Comms check."))
+
+
+def speak_stream(text):
+    """Yield (pcm16 mono bytes, sample_rate) one sentence at a time, so playback
+    can start while later sentences are still being synthesized."""
+    syn = SynthesisConfig(length_scale=1.0 / config.PIPER_SPEED)
+    chunks = iter(_voice().synthesize(text, syn_config=syn))
+    while True:
+        with _lock:  # held per sentence only, never across a yield
+            chunk = next(chunks, None)
+        if chunk is None:
+            return
+        yield chunk.audio_int16_bytes, chunk.sample_rate
 
 
 def speak(text):
-    """text -> (pcm16 mono bytes, sample_rate)."""
-    voice = _voice()
-    syn = SynthesisConfig(length_scale=1.0 / config.PIPER_SPEED)
-    with _lock:
-        chunks = list(voice.synthesize(text, syn_config=syn))
-    if not chunks:
+    """text -> (pcm16 mono bytes, sample_rate) for the whole text."""
+    parts = list(speak_stream(text))
+    if not parts:
         raise RuntimeError("Piper produced no audio")
-    return b"".join(c.audio_int16_bytes for c in chunks), chunks[0].sample_rate
+    return b"".join(p for p, _ in parts), parts[0][1]

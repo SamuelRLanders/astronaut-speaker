@@ -1,7 +1,7 @@
 [Unit]
 Description=Astronaut push-to-talk Mission Control
-After=network-online.target sound.target
-Wants=network-online.target
+# No network-online wait: the app starts offline and says "comms online" when connected.
+After=sound.target
 # Never give up restarting (default limit would stop after 5 quick failures)
 StartLimitIntervalSec=0
 
@@ -14,6 +14,7 @@ Environment=PYTHONUNBUFFERED=1
 ExecStart=/home/landers2/astronaut-speaker/.venv/bin/python main.py
 Restart=always
 RestartSec=2
+TimeoutStopSec=5
 
 [Install]
 WantedBy=multi-user.target

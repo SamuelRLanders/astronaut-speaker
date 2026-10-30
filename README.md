@@ -14,6 +14,8 @@ Costs nothing: Groq's free tier needs no card, and Piper runs on the Pi.
 - `stt.py`, `llm.py` - Groq (OpenAI-compatible API); `tts.py` - Piper. Swap a provider by rewriting one file
 - `make_sounds.py` - generates `sounds/` (Quindar beeps + offline fallback voice clips)
 - `checks.py` - step-by-step hardware/API checks
+- `leds.py` - green/red onboard LEDs as status lights
+- `install.sh` - one-time root setup (service, LED + shutdown permissions)
 - `astronaut.service` - systemd unit
 
 ## Wiring (Pi OFF while wiring)
@@ -63,23 +65,32 @@ Too much hiss/noise: lower it. Settings persist with `sudo alsactl store`.
 
 ## Run on boot
 
-    sudo cp astronaut.service /etc/systemd/system/
-    sudo systemctl daemon-reload
-    sudo systemctl enable --now astronaut
+    sudo ./install.sh                   # service + LED permissions + shutdown permission
     journalctl -u astronaut -f          # live logs, with per-stage latency
 
+After that it starts by itself whenever the Pi gets power (about 30 s until "comms online").
 Stop it before running checks by hand (both want the audio devices):
-`sudo systemctl stop astronaut`.
+`sudo systemctl stop astronaut`, and `sudo systemctl start astronaut` when done.
 
-Then do 8.: unplug the laptop, power from the power bank, turn on the hotspot, boot,
-wait for "comms online", talk.
+## At the party
 
-Turn the hotspot on BEFORE booting the Pi: the unit waits for network-online, which
-can add up to about a minute if no network is around. The program itself does not need
-the network to start; only replies do. If the wait is annoying, delete the two
-network-online lines from the unit.
+1. Turn on the iPhone hotspot and leave the Personal Hotspot screen open until the Pi
+   joins (iPhones hide the hotspot when nothing is connected for a while).
+2. Plug the Pi into the power bank. Green LED blinks fast while starting.
+3. You hear "comms online" (or "no signal" if the hotspot isn't reachable yet; it says
+   "comms online" as soon as it connects).
+4. To shut down: hold the button for 15 s. It says "shutting down"; wait for the green
+   LED to stop flashing, then unplug.
 
-Shut down with `sudo shutdown now`, wait for the green LED to stop, then unplug.
+| Signal | Meaning |
+|---|---|
+| Green fast blink | Starting up |
+| Green slow blink | Running, no internet |
+| Green solid | Ready |
+| Red solid | Recording (button held) |
+| Red fast blink | Thinking |
+| "No signal" / "Comms online" | Internet lost / back |
+| "Losing signal" | That request failed; try again |
 
 ## Tuning (in .env, then `sudo systemctl restart astronaut`)
 
@@ -90,12 +101,15 @@ Shut down with `sudo shutdown now`, wait for the green LED to stop, then unplug.
                         (download it first, see Setup; "medium" voices are a good speed/quality mix)
     PIPER_SPEED=1.1     faster speech
     MIN_HOLD_S=0.5      shorter presses ignored
+    SHUTDOWN_HOLD_S=15  hold this long to power off (0 = disabled)
     SYSTEM_PROMPT=...   Houston's personality
 
 ## Behaviour
 
 - Press: 2525 Hz beep, recording. Release: 2475 Hz beep. Held < 0.5 s: ignored.
 - Nothing heard: "Say again, over." Any error/timeout (15 s per call): "Losing signal".
+- Replies are spoken sentence by sentence: speech starts as soon as the first sentence is
+  synthesized while Piper works on the rest.
 - Pressing during thinking or during a reply cancels it and starts a new recording.
 - Remembers the last 5 exchanges. Restarting the service clears the memory.
 - If an audio device disappears, the process exits and systemd restarts it every 2 s.

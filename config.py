@@ -51,6 +51,8 @@ MIN_HOLD_S = _float("MIN_HOLD_S", 0.5)     # shorter presses are ignored
 MAX_RECORD_S = _float("MAX_RECORD_S", 30)  # stop recording if button is stuck
 NET_TIMEOUT_S = _float("NET_TIMEOUT_S", 15)  # per network call
 HISTORY_TURNS = _int("HISTORY_TURNS", 5)   # exchanges remembered
+SHUTDOWN_HOLD_S = _float("SHUTDOWN_HOLD_S", 15)  # hold this long = power off (0 = never)
+NET_CHECK_HOST = _str("NET_CHECK_HOST", "api.groq.com")  # reachability check on :443
 
 # --- Models ---------------------------------------------------------------
 STT_MODEL = _str("STT_MODEL", "whisper-large-v3-turbo")  # Groq
